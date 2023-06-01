@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -34,6 +37,21 @@ func SetupPGConfig() ConnectionConfig {
 	}
 }
 
+func executeFunction(pool *pgxpool.Pool, functionName string, args ...interface{}) (pgx.Row, error) {
+	query := fmt.Sprintf("SELECT * FROM %s(%s)", functionName, generateArgumentPlaceholders(len(args)))
+	return pool.QueryRow(context.Background(), query, args...), nil
+}
+func generateArgumentPlaceholders(count int) string {
+	placeholders := ""
+	for i := 1; i <= count; i++ {
+		if i > 1 {
+			placeholders += ", "
+		}
+		placeholders += fmt.Sprintf("$%d", i)
+	}
+	return placeholders
+}
+
 func main() {
 	InitAppMeta()
 	config := SetupPGConfig()
@@ -45,96 +63,117 @@ func main() {
 
 	fmt.Println("Successfully connected to the database!")
 
-	userRepo := NewUserRepository(poolConnection)
-
-	fmt.Println("Read Record")
-	users, err := userRepo.GetAllUsers()
+	rows, err := executeFunction(poolConnection, "get_all_users")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var name string
+		var email string
+		err := rows.Scan(&id, &name, &email)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("ID:", id, "Name:", name, "Email:", email)
 	}
 
-	for _, user := range users {
-		fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Println("Create Record")
+	/*
+		fmt.Println("Read Record")
+		users, err := userRepo.GetAllUsers()
+		if err != nil {
+			panic(err)
+		}
 
-	GMUser := User{
-		Name:  "Genetic Minds",
-		Email: "we@geneticminds.com",
-	}
+		for _, user := range users {
+			fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
+		}
 
-	err = userRepo.CreateUser(GMUser)
-	if err != nil {
-		panic(err)
-	}
+		fmt.Println("Create Record")
 
-	fmt.Println("User Created")
+		GMUser := User{
+			Name:  "Genetic Minds",
+			Email: "we@geneticminds.com",
+		}
 
-	fmt.Println("Read Again")
+		err = userRepo.CreateUser(GMUser)
+		if err != nil {
+			panic(err)
+		}
 
-	newUsers, err := userRepo.GetAllUsers()
-	if err != nil {
-		panic(err)
-	}
+		fmt.Println("User Created")
 
-	for _, user := range newUsers {
-		fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
-	}
+		fmt.Println("Read Again")
 
-	latestUser, err := userRepo.GetLatestUser()
-	if err != nil {
-		panic(err)
-	}
+		newUsers, err := userRepo.GetAllUsers()
+		if err != nil {
+			panic(err)
+		}
 
-	userID := latestUser.ID
+		for _, user := range newUsers {
+			fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
+		}
 
-	user, err := userRepo.GetUserByID(*userID)
-	if err != nil {
-		panic(err)
-	}
+		latestUser, err := userRepo.GetLatestUser()
+		if err != nil {
+			panic(err)
+		}
 
-	user.Name = "GM"
-	user.Email = "team@geneticminds.com"
+		userID := latestUser.ID
 
-	fmt.Println("Update Record")
+		user, err := userRepo.GetUserByID(*userID)
+		if err != nil {
+			panic(err)
+		}
 
-	err = userRepo.UpdateUser(user)
-	if err != nil {
-		panic(err)
-	}
+		user.Name = "GM"
+		user.Email = "team@geneticminds.com"
 
-	fmt.Println("User Updated")
+		fmt.Println("Update Record")
 
-	fmt.Println("Read Again")
+		err = userRepo.UpdateUser(user)
+		if err != nil {
+			panic(err)
+		}
 
-	updateUsers, err := userRepo.GetAllUsers()
-	if err != nil {
-		panic(err)
-	}
+		fmt.Println("User Updated")
 
-	for _, user := range updateUsers {
-		fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
-	}
+		fmt.Println("Read Again")
 
-	fmt.Println("Delete Record")
+		updateUsers, err := userRepo.GetAllUsers()
+		if err != nil {
+			panic(err)
+		}
 
-	err = userRepo.DeleteUser(*userID)
-	if err != nil {
-		panic(err)
-	}
+		for _, user := range updateUsers {
+			fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
+		}
 
-	fmt.Println("User Deleted")
+		fmt.Println("Delete Record")
 
-	fmt.Println("Read Again")
+		err = userRepo.DeleteUser(*userID)
+		if err != nil {
+			panic(err)
+		}
 
-	remainingUsers, err := userRepo.GetAllUsers()
-	if err != nil {
-		panic(err)
-	}
+		fmt.Println("User Deleted")
 
-	for _, user := range remainingUsers {
-		fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
-	}
+		fmt.Println("Read Again")
+
+		remainingUsers, err := userRepo.GetAllUsers()
+		if err != nil {
+			panic(err)
+		}
+
+		for _, user := range remainingUsers {
+			fmt.Printf("ID: %d, Name: %s, Email: %s\n", user.ID, user.Name, user.Email)
+		}
+	*/
 
 }

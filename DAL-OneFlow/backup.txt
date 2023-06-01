@@ -1,0 +1,22 @@
+
+	fmt.Println("Stored Procedure: get_all_users_by_order")
+
+	orderByResult, err := fetchRecords(pool, "get_all_users_by_order", "id", "DESC")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for _, row := range orderByResult {
+		fmt.Println("Row:", row)
+	}
+
+	fmt.Println("Stored Procedure: get_all_users")
+
+	allUsersResult, err := fetchRecords(pool, "get_all_users")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for _, row := range allUsersResult {
+		fmt.Println("Row:", row)
+	}

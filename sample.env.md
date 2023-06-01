@@ -7,9 +7,8 @@
 3. `LOG_LEVEL`: Sets the logging level for your application. You can use values like "debug", "info", "warn", "error", or "fatal" to control the verbosity of log messages.
 4. `LIMIT`: Specifies the maximum number of records to fetch per page. This determines the page size or the number of records returned in each paginated request.
 5. `OFFSET`: Specifies the number of records to skip or offset before fetching the current page of records. It determines the starting point of the records to be returned.
-6. `SORT_BY`: Specifies the field or column name by which the records should be sorted. It defines the sorting criteria for the fetched records.
-7. `SORT_ON`: Specifies the sort order for the records. It can be used to indicate whether the sorting should be in ascending or descending order.
-8. `SECRET_KEY`: A secret key used for encryption, session management, or signing tokens.
+6. `SORT_ON`: Specifies the sort order for the records. It can be used to indicate whether the sorting should be in ascending or descending order.
+7. `SECRET_KEY`: A secret key used for encryption, session management, or signing tokens.
 
 #### MongoDB
 
